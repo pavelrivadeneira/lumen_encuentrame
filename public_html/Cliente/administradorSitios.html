@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Administracion Noticias</title>
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/lib.jquery.json-2.3.min.js"></script>
+    <!-- bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>
+    <script>
+        var ext_id_Noticia = null;
+        main();
+        cargarComboActualizar();
+        function main(){
+            //verifico si esta logueado un administrador
+            if(sessionStorage["token"] == null){
+                document.location.href = "Login.html";
+            }
+            $.ajax({
+                url: "https://encuentramepavel.000webhostapp.com/public/index.php/sitios/listar",
+                method: 'GET',
+                contentType: 'application/json',
+                dataType: 'json',
+                success: function(data, textStatus, jqXHR){
+                    $("#nomUsuario").html('Bienvenid@: ' + sessionStorage["nombre"] + ' ');
+                    //generar cuerpo de la tabla
+                    var html = "";
+                    $.each(data, function (index, item) {
+                        html += "<tr>";
+                        html += "<td>" + (index + 1) + "</td>";//contador
+                        html += "<td>" + item["nombre"]+ "</td>";
+                        html += "<td>" + item["descripcion"]+ "</td>";
+                        html += "<td>" + item["categoria"]+ "</td>";
+                        html += "<td>" + item["latitud"]+ ", "+item["longitud"]+"</td>";
+                        html += "<td><button type='button' onclick='editarSitio(\""+(index + 1)+"\"); return false;' class='btn btn-primary' data-toggle='modal' data-target='#modalEditar'>EDITAR</button></td>";
+                        html += "</tr>";
+                    });
+                    $("#tabla_tbody").html(html);
+                    $.ajax({
+                        url: "https://encuentramepavel.000webhostapp.com/public/index.php/categoria/listar",
+                        method: 'GET',
+                        contentType: 'application/json',
+                        dataType: 'json',
+                        success: function(data, textStatus, jqXHR){
+                            var html = "";
+                            $.each(data, function (index, item) {
+                                for (var i = item.length - 1; i >= 0; i--) {
+                                    var c = i + 1;
+                                    html += "<option value='"+ c +"'>" + item[i] + "</option>";
+                                }
+                            });
+                            $("#comboCategoria").html(html);
+                        }, error: function(jqXHR, textStatus, errorThrown){
+                            $('#nomUsuario').html("No se pudo cargar los sitios.");
+                        }
+                    });
+                    $.ajax({
+                        url: "https://encuentramepavel.000webhostapp.com/public/index.php/direccion/listar",
+                        method: 'GET',
+                        contentType: 'application/json',
+                        dataType: 'json',
+                        success: function(data, textStatus, jqXHR){
+                            var html = "";
+                            $.each(data, function (index, item) {
+                                for (var i = item.length - 1; i >= 0; i--) {
+                                    var c = i + 1;
+                                    html += "<option value='"+ c +"'>" + item[i] + "</option>";
+                                }
+                            });
+                            $("#comboDireccion").html(html);
+                        }, error: function(jqXHR, textStatus, errorThrown){
+                            $('#nomUsuario').html("No se pudo cargar los sitios.");
+                        }
+                    });
+                }
+                /*success:function (data, textStatus, jqXHR){
+                    $("#nomUsuario").html(data["sitios"][0]);
+                }*/, error: function(jqXHR, textStatus, errorThrown){
+                    $('#nomUsuario').html("No se pudo cargar los sitios.");
+                }
+            });
+        }
+
+        function editarSitio(id) {
+            //alert(nombre);
+            $.ajax({
+                url: "https://encuentramepavel.000webhostapp.com/public/index.php/sitios/buscar",
+                method: "POST",
+                //datos que seran enviados mediante POST
+                data: JSON.stringify({
+                    "id_sitio": id
+                }),
+                contentType: "application/json",
+                dataType: "json",
+                success:function (data){
+                    document.getElementById('txtModalId').value = data["id"];
+                    document.getElementById('txtModalTitulo').value = data["nombre"];
+                    document.getElementById('txtModalDescripcion').value = data["descripcion"];
+                }
+            });
+        }
+
+        function Registrar(){
+            var varNom = document.getElementById("txtNomSitio").value,
+                varDesc = document.getElementById("txtDescSitio").value,
+                varCat = document.getElementById("comboCategoria").value,
+                varDir = document.getElementById("comboDireccion").value;
+            
+            if (varNom != '' && varDesc != ''){
+                //alert("tit "+ varNom+" desc "+ varDesc+" categoria "+ varCat);
+                $.ajax({
+                    url: "https://encuentramepavel.000webhostapp.com/public/index.php/sitios/registro",
+                    method: "POST",
+                    headers: {'apiToken' : sessionStorage["token"]},
+                    //datos que seran enviados mediante POST
+                    data: JSON.stringify({
+                        "nombre": varNom,
+                        "descripcion" : varDesc,
+                        "foto" : "default.png",
+                        "id_categoria" : varCat,//CAMBIAR POR COMBOBOX
+                        "id_direccion" : varDir
+                    }),
+                    contentType: "application/json",
+                    dataType: "json",
+                    success:function (response){
+                        location.reload();
+                    }
+                });
+            }else{
+                document.write("<p>No se pudo crear el sitio.</p>");
+            }
+        }
+
+        function ActualizarSitio(){
+            var id = $('#txtModalId').val(),
+                varNom = $('#txtModalTitulo').val(),
+                varDesc = $('#txtModalDescripcion').val(),
+                varCat = $('#comboModalCat').val(),
+                varDir = $('#comboModalDir').val();
+            alert(id + " | " + varNom + " | " + varDesc);
+            if (id =! '' && varNom != '' && varDesc != '' && varCat != '' && varDir != ''){
+                $.ajax({
+                    url: "https://encuentramepavel.000webhostapp.com/public/index.php/sitios/actualizar",
+                    method: "POST",//datos que seran enviados mediante POST
+                    data: JSON.stringify({
+                        "id_sitio" : id,
+                        "nombre": varNom,
+                        "descripcion" : varDesc,
+                        "foto" : "default.png",
+                        "id_categoria" : varCat,
+                        "id_direccion" : varDir
+                    }),
+                    contentType: "application/json",
+                    dataType: "json",
+                    success:function (response){
+                        //location.reload();
+                        main();
+                    }
+                });
+            }else{
+                document.write("<p>Llene todos los campos</p>");
+            }
+        }
+
+        function CerrarSesion(){
+            sessionStorage.clear();
+            location.reload();
+        }
+        function cargarComboActualizar(){
+            $.ajax({
+                url: "https://encuentramepavel.000webhostapp.com/public/index.php/categoria/listar",
+                method: 'GET',
+                contentType: 'application/json',
+                dataType: 'json',
+                success: function(data, textStatus, jqXHR){
+                    var html = "";
+                    $.each(data, function (index, item) {
+                        for (var i = item.length - 1; i >= 0; i--) {
+                            var c = i + 1;
+                            html += "<option value='"+ c +"'>" + item[i] + "</option>";
+                        }
+                    });
+                    $("#comboModalCat").html(html);
+                }, error: function(jqXHR, textStatus, errorThrown){
+                    $('#nomUsuario').html("No se pudo cargar las categorias.");
+                }
+            });
+            $.ajax({
+                url: "https://encuentramepavel.000webhostapp.com/public/index.php/direccion/listar",
+                method: 'GET',
+                contentType: 'application/json',
+                dataType: 'json',
+                success: function(data, textStatus, jqXHR){
+                    var html = "";
+                    $.each(data, function (index, item) {
+                        for (var i = item.length - 1; i >= 0; i--) {
+                            var c = i + 1;
+                            html += "<option value='"+ c +"'>" + item[i] + "</option>";
+                        }
+                    });
+                    $("#comboModalDir").html(html);
+                }, error: function(jqXHR, textStatus, errorThrown){
+                    $('#nomUsuario').html("No se pudo cargar las direcciones.");
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <form action="">
+        <center><span id="nomUsuario"></span></center>
+        <input type="button" value="SALIR" onclick="CerrarSesion(); return false;" class='btn btn-primary'><br>
+        <b>Nuevo Sitio:</b>
+        <div style="width:80%;">
+            <p>Nombre: </p>
+            <input type="text" placeholder="Escribe un nombre del sitio..." id="txtNomSitio" size="10" class="form-control" maxlength="255" required>
+            <p>Descripcion: </p>
+            <textarea placeholder="Escribe tu descripcion..." id="txtDescSitio" cols="40" rows="3" class="form-control" required></textarea>
+            <p>Foto: </p>
+            <img src="" width="10" height="10" />
+            <p>Categoria: </p>
+            <select id="comboCategoria" class="form-control">
+            </select>
+            <p>Coordenadas: </p>
+            <select id="comboDireccion" class="form-control">
+            </select>
+            <button type="button" onclick="Registrar(); return false;" class='btn btn-primary'>
+            CREAR SITIO
+            </button>
+        </div>
+        <table align='center' class="table table-dark table-hover" style="width:80%">
+            <thead>
+                <tr>
+                    <td><b>N°</b></td>
+                    <td><b>NOMBRE</b></td>
+                    <td><b>DESCRIPCION</b></td>
+                    <td><b>CATEGORIA</b></td>
+                    <td><b>DIRECCION</b></td>
+                    <td><b>ACCION</b></td>
+                </tr>
+            </thead>
+            <tbody id="tabla_tbody"></tbody>
+        </table>
+
+        <!-- The Modal -->
+        <div class="modal fade" id="modalEditar">
+            <div class="modal-dialog">
+            <div class="modal-content">
+            
+                <!-- Modal Header -->
+                <div class="modal-header">
+                <h4 class="modal-title" id="modalTitulo"><center>ACTUALIZAR SITIO</center></h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                
+                <!-- Modal body -->
+                <div class="modal-body" id="modalBody">
+                    <div class="form-group">
+                        <label for="txtModalTitulo">Id: </label>
+                        <input type="text" class="form-control" id="txtModalId" disabled>
+                        <label for="txtModalTitulo">Nombre: </label>
+                        <input type="text" class="form-control" id="txtModalTitulo" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="txtModalTitulo">Descripción: </label>
+                        <textarea id="txtModalDescripcion" cols="50" rows="3" class="form-control" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="comboModalCat">Categoria: </label>
+                        <select id="comboModalCat"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="comboModalDir">Coordenadas: </label>
+                        <select id="comboModalDir"></select>
+                    </div>
+                </div>
+                
+                <!-- Modal footer -->
+                <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="ActualizarSitio(); return false;"
+                 data-dismiss="modal">Guardar</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+            </div>
+        </div>
+    </form>
+</body>
+</html>

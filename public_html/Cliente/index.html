@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Titulo</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/miEstilo.css">
+    <script src="js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/lib.jquery.json-2.3.min.js"></script>
+    
+    <script>
+    /*
+    Para el funcionamiento sin necesidad de un servidor...
+    dentro de la carpeta htttp>Middleware registramos un archivo 'CORS'
+    */
+    Main();
+    function Main(){
+        $.ajax({
+            url: "http://localhost/~wargosh/noticiasws/public/index.php/noticias/lista/",
+            method: "GET",
+            //contentType: "application/json",
+            dataType: 'json',
+            success:function (response){
+                /*document-writer("<div class='col-sm-4'>holi</div>");
+                document-writer("<div class='col-sm-4'>hola</div>");
+                document-writer("<div class='col-sm-4'>hole</div>");*/
+                /********************* FORMULARIO REGISTRO ******************************/
+                document.write("<div><center><h1>REGISTRO DE NOTICIAS</h1></center>");
+                document.write("Titulo: <input type='text' id='txtTitulo'><br>");
+                document.write("Descripcion: <input type='text' id='txtDescripcion'>");
+                document.write("<br><br><input type='button' value='Registrar Noticia'"+
+                " onclick='Registrar(); return false;'></div>");
+                /********************* LISTA NOTICIAS ***********************************/
+                document.write("<div><center><h1>LISTA DE NOTICIAS</h1></center>");
+                document.write("<table cellpadding='15' align='center' border='10'><tr>"+
+                "<td><b>Titulo</b></td><td><b>Descripcion</b></td><td><b>Fecha creacion</b></td></tr>");
+                for (let i = 0; i < response.length; i++) {
+                    document.write("<tr><td>"+response[i]['titulo']+"<br></td>");
+                    document.write("<td>"+response[i]['descripcion']+"<br></td>");                    
+                     document.write("<td>"+response[i]['created_at']+"<br></td></tr>");  
+                }
+                document.write("</table></div>");
+                
+                document-writer("holi");
+                document.write("<br><br><br>");
+            }
+        });
+    }
+    
+    function Registrar(){
+        var varTitulo = document.getElementById("txtTitulo").value,
+            varDesc = document.getElementById("txtDescripcion").value,
+            external_id = "49b7852c-887d-4065-946a-100e98338661";
+        alert("tit "+ varTitulo+" desc "+ varDesc+" external "+ external_id);
+        
+        $.ajax({
+            
+            url: "http://localhost/~wargosh/noticiasws/public/index.php/noticiero/noticia/registro",
+            method: "POST",
+            data: JSON.stringify({
+                "external": external_id,
+                "titulo": varTitulo,
+                "descripcion": varDesc
+            }),
+            contentType: "application/json",
+            dataType: "json",
+            success:function (response){
+                location.reload();
+            }
+        });
+    }
+    </script>
+</head>
+<body>
+    <p>No sale...</p>
+</body>
+</html>
